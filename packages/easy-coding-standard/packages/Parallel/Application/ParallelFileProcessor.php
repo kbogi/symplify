@@ -76,6 +76,7 @@ final class ParallelFileProcessor
             &$reachedSystemErrorsCountLimit
         ): void {
             $systemErrors[] = new SystemError($throwable->getLine(), $throwable->getMessage(), $throwable->getFile());
+
             ++$systemErrorsCount;
             $reachedSystemErrorsCountLimit = true;
             $streamSelectLoop->stop();
@@ -97,6 +98,7 @@ final class ParallelFileProcessor
 
             // handlers converting string json to array
             // @see https://freesoft.dev/program/64329369#decoder
+
             $processStdOutDecoder = new Decoder($childProcess->stdout, true, 512, 0, 4 * 1024 * 1024);
             $processStdOutDecoder->on(ReactEvent::DATA, function (array $json) use (
                 $childProcess,
@@ -162,15 +164,19 @@ final class ParallelFileProcessor
             });
 
             $job = array_pop($jobs);
+
+            // this adds extra quotes to start and end that break everything... but why?
             $processStdInEncoder->write([
                 self::ACTION => Action::CHECK,
                 Bridge::FILES => $job,
                 Bridge::SYSTEM_ERRORS => $systemErrors,
                 Bridge::SYSTEM_ERRORS_COUNT => count($systemErrors),
             ]);
+
         }
 
         $streamSelectLoop->run();
+        die;
 
         if ($reachedSystemErrorsCountLimit) {
             $systemErrors[] = sprintf(
