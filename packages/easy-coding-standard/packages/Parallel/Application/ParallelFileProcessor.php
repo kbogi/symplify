@@ -9,6 +9,7 @@ use Clue\React\NDJson\Decoder;
 use Clue\React\NDJson\Encoder;
 use React\ChildProcess\Process;
 use React\EventLoop\StreamSelectLoop;
+use React\Stream\WritableResourceStream;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symplify\EasyCodingStandard\Parallel\Command\WorkerCommandLineFactory;
@@ -91,9 +92,12 @@ final class ParallelFileProcessor
             $childProcess = new Process($workerCommandLine);
             $childProcess->start($streamSelectLoop);
 
+            // @see https://github.com/clue/reactphp-ndjson/blob/e4b9b46fcee17cc52ec1a490c5243c67ed7b2760/README.md#encoder
+            $writableResourceStream = new WritableResourceStream($streamSelectLoop);
+
             // handlers converting objects to json string
             // @see https://freesoft.dev/program/64329369#encoder
-            $processStdInEncoder = new Encoder($childProcess->stdin);
+            $processStdInEncoder = new Encoder($writableResourceStream);
             $processStdInEncoder->on(ReactEvent::ERROR, $handleErrorCallable);
 
             // handlers converting string json to array
